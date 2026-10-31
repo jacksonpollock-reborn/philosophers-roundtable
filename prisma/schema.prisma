@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Persona {
+  id          String   @id @default(cuid())
+  name        String
+  title       String
+  era         String?
+  avatarColor String
+  systemPrompt String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages    Message[]
+  discussions DiscussionPersona[]
+}
+
+model Discussion {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("active")
+  totalRounds Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages    Message[]
+  personas    DiscussionPersona[]
+}
+
+model DiscussionPersona {
+  id           String @id @default(cuid())
+  discussionId String
+  personaId    String
+  turnOrder    Int
+
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  persona      Persona    @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@unique([discussionId, personaId])
+}
+
+model Message {
+  id           String   @id @default(cuid())
+  discussionId String
+  personaId    String?
+  content      String
+  round        Int
+  replyToId    String?
+  createdAt    DateTime @default(now())
+
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  persona      Persona?   @relation(fields: [personaId], references: [id])
+  replyTo      Message?   @relation("Replies", fields: [replyToId], references: [id])
+  replies      Message[]  @relation("Replies")
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  source      String?
+  category    String?
+  createdAt   DateTime @default(now())
+}
+
+model Settings {
+  id            String @id @default("singleton")
+  provider      String @default("gemini")
+  geminiApiKey  String?
+  geminiModel   String @default("gemini-2.0-flash")
+  ollamaBaseUrl String @default("http://localhost:11434")
+  ollamaModel   String @default("llama3.1")
+}
